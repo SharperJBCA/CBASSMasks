@@ -119,7 +119,6 @@ def query_arc_pixels(pixels,nside=128, ra=0, dec=0, major=1, minor=None, width=1
 
     # Find all pixels bound by ellipse 
     pixels = np.concatenate(pixel_rhombi)
-
     return pixels
 
 
@@ -199,13 +198,10 @@ def threshold_mask(pixels, map=np.zeros(1), threshold=None, threshold_pc=None):
     elif threshold is not None and threshold_pc is not None:
         raise ValueError('Must specify only one of threshold or threshold_pc.')
     elif threshold_pc is not None:
-        print(np.min(map),np.max(map),map.size)
         z = map[pixels] 
         z = z[z != hp.UNSEEN]
         threshold = np.percentile(z, threshold_pc)
-        print(np.min(z),np.max(z),z.size)
 
-    print(threshold,threshold_pc)
     return pixels[np.where((map[pixels] > threshold) & (map[pixels] != hp.UNSEEN))[0]]
 
 def remove_pixels_with_masked_neighbour(pixels,nside=128):

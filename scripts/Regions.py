@@ -25,8 +25,6 @@ class Region:
         self.pixels = np.arange(12*self.nside**2,dtype=int)
         for process, parameters in self.processes:
             self.pixels = process(self.pixels,**parameters)
-        if 'pc' in self.name:
-            print(self.pixels)
     def __items__(self):
         return self.processes.items()
     
@@ -77,7 +75,7 @@ class Regions:
             region_info.attrs['cmap'] = region.cmap
         h.close()
 
-    def create_mask(self, mask_filename, include=[], exclude=[]):
+    def create_mask(self, mask_filename, include=[], exclude=[],nside=128):
         if not os.path.exists(os.path.dirname(mask_filename)):
             os.makedirs(os.path.dirname(mask_filename))
 
@@ -111,6 +109,8 @@ class Regions:
         mask = np.zeros(12*self.regions[0].nside**2)
         mask[mask_pixels] = 1
 
+        mask = hp.ud_grade(mask,nside)
+        mask[mask < 1] = 0 
         # Write the mask
         hp.write_map(mask_filename,mask,overwrite=True)
 
