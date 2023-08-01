@@ -14,6 +14,13 @@ from types import GenericAlias
 from astropy.visualization.wcsaxes import SphericalCircle
 from .great_circle import greatcircle
 
+
+def todegrees(theta,phi):
+    return np.degrees(phi), np.degrees(np.pi/2-theta)
+
+def tothetaphi(x,y):
+    return np.pi/2-y*np.pi/180., x*np.pi/180.
+
 HealpixMap = GenericAlias(np.ndarray, (float,))
 
 loops = {'GCS':[1,[328,22]],
