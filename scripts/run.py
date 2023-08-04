@@ -13,7 +13,29 @@ import matplotlib.colors as mcolors
 from Regions import Regions, Region
 from DefineRegions import threshold_mask, remove_pixels_with_masked_neighbour,query_arc_pixels, remove_overlap_pixels,smooth_mask,query_elliptical_pixels, latitude_cut, bad_data_mask, todegrees,planck_source_catalogue,subtract_elliptical_pixels
 
-    
+def create_masks_short():
+    cbass_map = hp.read_map('/scratch/nas_cbassarc/cbass_data/Reductions/v34m3_mcal1/NIGHTMERID20/AWR1/calibrated_map/AWR1_xND12_xAS14_1024_NM20S3M1_G_Offmap.fits')
+        #'/path/to/cbass/map/AWR1_xND12_xAS14_1024_NM20S3M1_G_Offmap.fits')
+    nside = 1024
+    ud_cbass_map = hp.ud_grade(cbass_map,nside)
+    print(np.min(ud_cbass_map),np.max(ud_cbass_map))
+    regions = Regions()
+
+    regions.add_region(Region(name='CBASS 80pc', cmap='Blues',nside=nside,
+                              processes=[(threshold_mask,{'map':ud_cbass_map,'threshold_pc':80}),
+                                         #(subtract_elliptical_pixels,{'nside':nside, 'ra':283.778,'dec':74.49,'major':1,'minor':1,'pa':0,'res':18}), # Virgo A
+                                         (subtract_elliptical_pixels,{'nside':nside, 'ra':289.95,'dec':64.36,'major':1,'minor':1,'pa':0,'res':18}), # 3c273
+                                         (subtract_elliptical_pixels,{'nside':nside, 'ra':305,'dec':56,'major':1,'minor':1,'pa':0,'res':18}), # ???
+                                         (remove_pixels_with_masked_neighbour,{'nside':nside}),
+                                         (remove_pixels_with_masked_neighbour,{'nside':nside}),
+                                         (remove_pixels_with_masked_neighbour,{'nside':nside}),
+                                         (smooth_mask,{'nside':nside,'fwhm':1}),
+                                         (bad_data_mask,{'map':ud_cbass_map})]))
+
+    regions.plot_regions(background=cbass_map, figname='test.png', cmap=pyplot.cm.viridis)
+
+    regions.write_regions('regions_short.h5',overwrite=True)
+
 def create_masks(): 
     cbass_map = hp.read_map('/scratch/nas_cbassarc/cbass_data/Reductions/v34m3_mcal1/NIGHTMERID20/AWR1/calibrated_map/AWR1_xND12_xAS14_1024_NM20S3M1_G_Offmap.fits')
         #'/path/to/cbass/map/AWR1_xND12_xAS14_1024_NM20S3M1_G_Offmap.fits')
@@ -60,6 +82,11 @@ def create_masks():
                                          (bad_data_mask,{'map':ud_cbass_map})]))
     regions.add_region(Region(name='CBASS 80pc', cmap='Blues',nside=nside,
                               processes=[(threshold_mask,{'map':ud_cbass_map,'threshold_pc':80}),
+                                         (subtract_elliptical_pixels,{'nside':nside, 'ra':283.778,'dec':74.49,'major':1,'minor':1,'pa':0,'res':18}), # Virgo A
+                                         (subtract_elliptical_pixels,{'nside':nside, 'ra':289.95,'dec':64.36,'major':1,'minor':1,'pa':0,'res':18}), # 3c273
+                                         #(subtract_elliptical_pixels,{'nside':nside, 'ra':271.3483,'dec':77.2838,'major':1,'minor':1,'pa':0,'res':18}), # 3c271
+                                         (remove_pixels_with_masked_neighbour,{'nside':nside}),
+                                         (remove_pixels_with_masked_neighbour,{'nside':nside}),
                                          (remove_pixels_with_masked_neighbour,{'nside':nside}),
                                          (smooth_mask,{'nside':nside,'fwhm':1}),
                                          (bad_data_mask,{'map':ud_cbass_map})]))
@@ -67,7 +94,7 @@ def create_masks():
     regions.plot_regions(background=cbass_map, figname='percent_cuts.png', cmap=pyplot.cm.viridis)
 
     regions.add_region(Region(name='LFI30 PCCS', cmap='Blues',nside=nside,
-                              processes=[(planck_source_catalogue,dict(nside=128, catalogue='../other_masks/source_catalogues/lfi30_pccs_planck2016.fits', hdu_index=1, flux_threshold=1,min_latitude=10)),
+                              processes=[(planck_source_catalogue,dict(nside=nside, catalogue='../other_masks/source_catalogues/lfi30_pccs_planck2016.fits', hdu_index=1, flux_threshold=1,min_latitude=10)),
                                          (bad_data_mask,{'map':hp.ud_grade(cbass_map,nside)})]))
 
     regions.add_region(Region(name='Orion-Eridanus superbubble', cmap='Blues',nside=nside,
@@ -80,6 +107,9 @@ def create_masks():
                                             (smooth_mask,{'nside':nside,'fwhm':1})]))
     regions.add_region(Region(name='Inner Plane', cmap='Blues',nside=nside,
                                 processes = [(query_elliptical_pixels,{'nside':nside, 'ra':0,'dec':0,'major':13,'minor':60,'pa':0,'res':18})]))
+    regions.add_region(Region(name='Cygnus Region', cmap='Blues',nside=nside,
+                                processes = [(query_elliptical_pixels,{'nside':nside, 'ra':0,'dec':0,'major':13,'minor':60,'pa':0,'res':18})]))
+
     regions.add_region(Region(name='Sh2-27', cmap='Blues',nside=nside,
                                 processes = [(query_elliptical_pixels,{'nside':nside, 'ra':6,'dec':24,'major':5,'minor':5,'pa':0,'res':18})]))    
     regions.add_region(Region(name='Loop II', cmap='Reds',nside=nside,
@@ -105,19 +135,12 @@ def create_masks():
 
 def plot_masks():
     regions = Regions()
-    regions.load_regions('regions.h5')
+    regions.load_regions('regions_short.h5')
 
     for nside in [1024,512,256, 128]:
-        regions.create_mask(f'masks/CBASS_95pc_G_{nside:04d}.fits',include=['CBASS 95pc'],nside=nside)
-        regions.create_mask(f'masks/CBASS_90pc_G_{nside:04d}.fits',include=['CBASS 90pc'],nside=nside)
-        regions.create_mask(f'masks/CBASS_85pc_G_{nside:04d}.fits',include=['CBASS 85pc'],nside=nside)
         regions.create_mask(f'masks/CBASS_80pc_G_{nside:04d}.fits',include=['CBASS 80pc'],nside=nside)
-        regions.create_mask(f'masks/Fan_Region_G_{nside:04d}.fits',include=['Fan Region'],nside=nside)
-        regions.create_mask(f'masks/NorthPolarSpur_G_{nside:04d}.fits',include=['North Polar Spur'],exclude=['LFI30 PCCS'],nside=nside)
-        regions.create_mask(f'masks/NorthPolarSpurA_G_{nside:04d}.fits',include=['North Polar Spur A'],exclude=['LFI30 PCCS'],nside=nside)
-        regions.create_mask(f'masks/NorthPolarSpurB_G_{nside:04d}.fits',include=['North Polar Spur B'],exclude=['LFI30 PCCS'],nside=nside)
 
 
 if __name__ == "__main__":
-    create_masks()
-    #plot_masks()
+    create_masks_short()
+    plot_masks()

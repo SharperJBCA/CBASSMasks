@@ -144,5 +144,9 @@ class Regions:
             m[m==0]=np.nan
             mollview.contourf(m,cmap=pyplot.get_cmap(region.cmap))
             mollview.text(*todegrees(*hp.pix2ang(region.nside,region.pixels[0])),region.name,fontsize=10,color='w',path_effects=[pe.withStroke(linewidth=1, foreground="k")])
+        from astropy import units as u
+        mollview.axes.coords[0].set_ticks(spacing = 10*u.deg)
+        mollview.axes.coords[1].set_ticks(spacing = 10*u.deg)
+        mollview.add_grid()
         #hp.graticule()
         pyplot.savefig(figname,dpi=300)
